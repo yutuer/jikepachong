@@ -7,25 +7,45 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 )
 
-type Info struct {
+const (
+	OutDir  = "H:/jike/%s"
+	DirName = "%s_%s"
+)
+
+type InfoReq struct {
 	Cid           string `json:"cid"`
 	With_groupbuy bool   `json:"with_groupbuy"`
+}
+
+type InfoRes struct {
+	Error []string `json:"error"`
+	Extra []string `json:"extra"`
+	Data  InfoData `json:"data"`
+	Code  int      `json:"code"`
+}
+
+type InfoData struct {
+	Author_name string `json:"author_name"`
+	//Column_share_title string `json:"column_share_title"`
+	//Author_intro       string `json:"author_intro"`
+	//Column_subtitle    string `json:"column_subtitle"`
+	Column_title string `json:"column_title"`
+	//Column_unit        string `json:"column_unit"`
 }
 
 func GetOneInfo(id int) {
 	infoUrl := "https://time.geekbang.org/serv/v1/column/intro"
 
-	info := &Info{Cid: strconv.Itoa(id), With_groupbuy: true}
+	info := &InfoReq{Cid: strconv.Itoa(id), With_groupbuy: true}
 
 	bs, err := json.Marshal(info)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	log.Println(string(bs))
 
 	request, e := http.NewRequest("POST", infoUrl, bytes.NewReader(bs))
 	if e != nil {
@@ -34,8 +54,8 @@ func GetOneInfo(id int) {
 
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Referer", fmt.Sprintf("https://time.geekbang.org/column/intro/%d", id))
-	request.Header.Set("Cookie", "_ga=GA1.2.1909908536.1541420176; GCID=137917f-117ceb1-f7292b8-7205755; _gid=GA1.2.1174986564.1555901483; _gat=1; Hm_lvt_022f847c4e3acd44d4a2481d9187f1e6=1555759694,1555901483,1555901486,1555937472; SERVERID=3431a294a18c59fc8f5805662e2bd51e|1555937474|1555935529; Hm_lpvt_022f847c4e3acd44d4a2481d9187f1e6=1555937475")
-	request.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36")
+	//request.Header.Set("Cookie", "_ga=GA1.2.1909908536.1541420176; GCID=137917f-117ceb1-f7292b8-7205755; _gid=GA1.2.1174986564.1555901483; _gat=1; Hm_lvt_022f847c4e3acd44d4a2481d9187f1e6=1555759694,1555901483,1555901486,1555937472; SERVERID=3431a294a18c59fc8f5805662e2bd51e|1555937474|1555935529; Hm_lpvt_022f847c4e3acd44d4a2481d9187f1e6=1555937475")
+	//request.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36")
 
 	client := &http.Client{}
 	resp, err := client.Do(request)
@@ -52,9 +72,32 @@ func GetOneInfo(id int) {
 			if err != nil {
 				log.Fatalln(err)
 			}
-			log.Println(string(bs))
-		}
 
+			infoRes := &InfoRes{}
+			json.Unmarshal(bs, infoRes)
+
+			dirName := fmt.Sprintf(DirName, infoRes.Data.Author_name, infoRes.Data.Column_title)
+			dirPath := fmt.Sprintf(OutDir, dirName)
+
+			if exists := isDirExist(dirPath); !exists {
+				err = os.MkdirAll(dirPath, os.ModePerm)
+				if err != nil {
+					log.Fatalln(err)
+				}
+			}
+		}
 	}
 
+}
+
+func isDirExist(dirPath string) bool {
+	_, e := os.Stat(dirPath)
+	if e != nil {
+		if os.IsExist(e) {
+			return true
+		} else {
+			return false
+		}
+	}
+	return true
 }
