@@ -76,7 +76,7 @@ func StartNewAll() []int {
 	}
 
 	log.Println("StartNewAll StatusCode:", resp.StatusCode)
-	log.Println(string(bs))
+	//log.Println(string(bs))
 
 	ret := make([]int, 0)
 
@@ -86,7 +86,7 @@ func StartNewAll() []int {
 
 		json.Unmarshal(bs, NewAllResult)
 
-		for _, v := range *NewAllResult.Data.List {
+		for _, v := range NewAllResult.Data.List {
 			ret = append(ret, v.Id)
 		}
 	}

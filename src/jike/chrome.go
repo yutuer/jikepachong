@@ -57,12 +57,10 @@ func StartChromeAndGetContent(url string) string {
 		Value: "www",
 	})
 
-	url = "https://time.geekbang.org/serv/v1/column/details"
-
 	// 导航到目标网站
 	err = webDriver.Get(url)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to load page: %s\n", err))
+		log.Fatal(fmt.Sprintf("Failed to load page: %s\n", err))
 	}
 
 	//判断加载完成
