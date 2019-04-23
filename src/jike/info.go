@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	OutDir  = "H:/jike/%s"
-	DirName = "%s_%s"
+	OutDir = "H:/jike/%d_%s_%s"
 )
 
 type InfoReq struct {
@@ -66,7 +65,6 @@ func GetOneInfo(id int) {
 	defer resp.Body.Close()
 
 	{
-		log.Println(resp.StatusCode)
 		if resp.StatusCode == 200 {
 			bs, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
@@ -76,8 +74,7 @@ func GetOneInfo(id int) {
 			infoRes := &InfoRes{}
 			json.Unmarshal(bs, infoRes)
 
-			dirName := fmt.Sprintf(DirName, infoRes.Data.Author_name, infoRes.Data.Column_title)
-			dirPath := fmt.Sprintf(OutDir, dirName)
+			dirPath := fmt.Sprintf(OutDir, id, infoRes.Data.Author_name, infoRes.Data.Column_title)
 
 			if exists := isDirExist(dirPath); !exists {
 				err = os.MkdirAll(dirPath, os.ModePerm)
@@ -85,7 +82,12 @@ func GetOneInfo(id int) {
 					log.Fatalln(err)
 				}
 			}
+
+			GetArticles(dirPath, id)
+		} else {
+			log.Println(resp.StatusCode)
 		}
+
 	}
 
 }

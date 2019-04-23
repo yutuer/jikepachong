@@ -60,23 +60,23 @@ func StartChromeAndGetContent(url string) string {
 	// 导航到目标网站
 	err = webDriver.Get(url)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("Failed to load page: %s\n", err))
+		log.Fatalln(fmt.Sprintf("Failed to load page: %s\n", err))
 	}
 
 	//判断加载完成
 	jsRt, err := webDriver.ExecuteScript("return document.readyState", nil)
 	if err != nil {
-		log.Println("exe js err", err)
+		log.Fatalln("exe js err", err)
 	}
 	if jsRt != "complete" {
-		log.Fatal("网页加载未完成")
+		log.Fatalln("网页加载未完成")
 	}
 
 	//获取网站内容
 	time.Sleep(1 * time.Second)
 	frameHtml, err := webDriver.PageSource()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	return frameHtml

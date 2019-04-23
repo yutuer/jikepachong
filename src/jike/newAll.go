@@ -75,9 +75,6 @@ func StartNewAll() []int {
 		log.Fatal(err)
 	}
 
-	log.Println("StartNewAll StatusCode:", resp.StatusCode)
-	//log.Println(string(bs))
-
 	ret := make([]int, 0)
 
 	if resp.StatusCode == 200 {
@@ -89,6 +86,8 @@ func StartNewAll() []int {
 		for _, v := range NewAllResult.Data.List {
 			ret = append(ret, v.Id)
 		}
+	} else {
+		log.Println(resp.StatusCode)
 	}
 	return ret
 }

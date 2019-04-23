@@ -19,11 +19,13 @@ func main() {
 	ch := make(chan bool, len(allIds))
 
 	for _, id := range allIds {
-		jike.GetOneInfo(id)
-		ch <- true
+		func() {
+			jike.GetOneInfo(id)
+			ch <- true
+		}()
 	}
 
-	for i := 0; i < len(ch); i++ {
+	for i := 0; i < len(allIds); i++ {
 		<-ch
 	}
 }
