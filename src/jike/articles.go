@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -94,22 +95,43 @@ func GetArticles(dirPath string, id int) {
 func DoOneArticle(dirPath string, article Article, infoId int) {
 	url := fmt.Sprintf(ArticleUrl, article.Id)
 	title := strings.Replace(article.Article_title, "/", "&", -1)
-	title = strings.Replace(title, "27 | ", "27__", -1)
+	//title = strings.Replace(title, "27 | ", "27__", -1)
 	title = strings.Replace(title, " ", "", -1)
-	title = strings.Replace(title, "？", "!", -1)
-	title = strings.Replace(title, "“", "", -1)
-	title = strings.Replace(title, "”", "", -1)
-	title = strings.Replace(title, "*", "_", -1)
-	title = strings.Replace(title, "?", "!", -1)
-	title = strings.Replace(title, "：", "_", -1)
-	title = strings.Replace(title, "-", "_", -1)
+	//title = strings.Replace(title, "？", "!", -1)
+	//title = strings.Replace(title, "“", "", -1)
+	//title = strings.Replace(title, "”", "", -1)
+	//title = strings.Replace(title, "*", "_", -1)
+	//title = strings.Replace(title, "?", "!", -1)
+	//title = strings.Replace(title, "：", "_", -1)
+	//title = strings.Replace(title, "-", "_", -1)
 	title = strings.Replace(title, "|", "__", -1)
+
+	var f *os.File
+
 	path := fmt.Sprintf(FileName, dirPath, title)
-	f, e := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
-	if e != nil {
-		log.Fatalln(e)
+	_, err := os.Stat(path)
+	if err == nil {
+		err = os.Remove(path)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		f, err = os.Create(path)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	} else {
+		if os.IsNotExist(err) {
+			f, err = os.Create(path)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}
 	}
 
+	if f == nil {
+		log.Fatalln(errors.Errorf("title:%s 不能生成文件", title))
+	}
 	defer f.Close()
 
 	log.Printf("开始抓取 %d: %v", infoId, article)

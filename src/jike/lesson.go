@@ -47,7 +47,7 @@ type NewAllResult struct {
 	Code  int      `json:"code"`
 }
 
-func StartNewAll() []int {
+func GetLessonIds() []int {
 	mainUrl := "https://time.geekbang.org/serv/v1/column/newAll"
 
 	client := &http.Client{}

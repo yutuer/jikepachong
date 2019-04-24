@@ -13,19 +13,20 @@ func main() {
 	//GCID, GCESS, SERVERID := jike.StartAccount()
 	//log.Println(GCID, GCESS, SERVERID)
 
-	allIds := jike.StartNewAll()
-	log.Println("num:", len(allIds), ", allIds:", allIds)
+	allLessonIds := jike.GetLessonIds()
+	lessonsLen := len(allLessonIds)
+	log.Println("num:", lessonsLen, ", allIds:", allLessonIds)
 
-	ch := make(chan bool, len(allIds))
+	ch := make(chan bool, lessonsLen)
 
-	for _, id := range allIds {
-		func() {
-			jike.GetOneInfo(id)
+	for _, id := range allLessonIds {
+		go func(id int) {
+			jike.GetOneLessonInfo(id)
 			ch <- true
-		}()
+		}(id)
 	}
 
-	for i := 0; i < len(allIds); i++ {
+	for i := 0; i < lessonsLen; i++ {
 		<-ch
 	}
 }

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	OutDir = "H:/jike/%d_%s_%s"
+	OutDir = "G:/jike/%d_%s_%s"
 )
 
 type InfoReq struct {
@@ -36,7 +36,7 @@ type InfoData struct {
 	//Column_unit        string `json:"column_unit"`
 }
 
-func GetOneInfo(id int) {
+func GetOneLessonInfo(id int) {
 	infoUrl := "https://time.geekbang.org/serv/v1/column/intro"
 
 	info := &InfoReq{Cid: strconv.Itoa(id), With_groupbuy: true}
