@@ -2,13 +2,14 @@ package jike
 
 import (
 	"bytes"
+	"chromeUtil"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
+	"github.com/tebeka/selenium"
+	"github.com/tebeka/selenium/chrome"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -40,6 +41,10 @@ type Article struct {
 	Id            int    `json:"id"`
 	Article_title string `json:"article_title"`
 	Chapter_id    int    `json:"chapter_id"`
+}
+
+func (article *Article) String() string {
+	return fmt.Sprintf("%d, %s, %d", article.Id, article.Article_title, article.Chapter_id)
 }
 
 type ArticlePage struct {
@@ -83,8 +88,11 @@ func GetArticles(dirPath string, id int) {
 			articleRes := &ArticleRes{}
 			json.Unmarshal(bs, articleRes)
 
+			webDriver := getWebDriver()
+			defer webDriver.Close()
+
 			for _, v := range articleRes.Data.List {
-				DoOneArticle(dirPath, v, id)
+				DoOneArticle(webDriver, dirPath, v, id)
 			}
 		} else {
 			log.Println(resp.StatusCode)
@@ -92,7 +100,7 @@ func GetArticles(dirPath string, id int) {
 	}
 }
 
-func DoOneArticle(dirPath string, article Article, infoId int) {
+func DoOneArticle(driver selenium.WebDriver, dirPath string, article Article, infoId int) {
 	url := fmt.Sprintf(ArticleUrl, article.Id)
 	title := strings.Replace(article.Article_title, "/", "&", -1)
 	//title = strings.Replace(title, "27 | ", "27__", -1)
@@ -106,39 +114,52 @@ func DoOneArticle(dirPath string, article Article, infoId int) {
 	//title = strings.Replace(title, "-", "_", -1)
 	title = strings.Replace(title, "|", "__", -1)
 
-	var f *os.File
-
 	path := fmt.Sprintf(FileName, dirPath, title)
-	_, err := os.Stat(path)
-	if err == nil {
-		err = os.Remove(path)
-		if err != nil {
-			log.Fatalln(err)
-		}
 
-		f, err = os.Create(path)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	} else {
-		if os.IsNotExist(err) {
-			f, err = os.Create(path)
-			if err != nil {
-				log.Fatalln(err)
-			}
-		}
+	task := chromeUtil.NewTask(path, url, article.String(), infoId, driver)
+
+	chromeUtil.GetChromeService().SubmitTask(task)
+}
+
+func getWebDriver() selenium.WebDriver {
+	// 调起chrome浏览器
+	webDriver, err := selenium.NewRemote(getChromeCaps(), fmt.Sprintf("http://localhost:%d/wd/hub", Port))
+	if err != nil {
+		log.Fatalln(err)
 	}
 
-	if f == nil {
-		log.Fatalln(errors.Errorf("title:%s 不能生成文件", title))
+	return webDriver
+}
+
+func getChromeCaps() selenium.Capabilities {
+	//链接本地的浏览器 chrome
+	caps := selenium.Capabilities{
+		"browserName": "chrome",
 	}
-	defer f.Close()
 
-	log.Printf("开始抓取 %d: %v", infoId, article)
+	// 禁止加载图片，加快渲染速度
+	imgCaps := map[string]interface{}{
+		"profile.managed_default_content_settings.images": 2,
+	}
 
-	content := StartChromeAndGetContent(url)
-	f.Write([]byte(content))
+	chromeCaps := chrome.Capabilities{
+		Prefs: imgCaps,
+		Path:  "",
+		Args: []string{
+			//"--headless", // 设置Chrome无头模式，在linux下运行，需要设置这个参数，否则会报错
+			"--no-sandbox",
+			"--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/604.4.7 (KHTML, like Gecko) Version/11.0.2 Safari/604.4.7", // 模拟user-agent，防反爬
+			//"--start-maximized",
+			//"--disable-gpu",
+			//"--disable-impl-side-painting",
+			//"--disable-gpu-sandbox",
+			//"--disable-accelerated-2d-canvas",
+			//"--disable-accelerated-jpeg-decoding",
+			//"--test-type=ui",
+		},
+	}
+	//以上是设置浏览器参数
+	caps.AddChrome(chromeCaps)
 
-	// 暂停2秒
-	//time.Sleep(2 * time.Second)
+	return caps
 }

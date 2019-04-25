@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	Port   = 9515
 	OutDir = "G:/jike/%d_%s_%s"
 )
 
@@ -89,7 +90,6 @@ func GetOneLessonInfo(id int) {
 		}
 
 	}
-
 }
 
 func isDirExist(dirPath string) bool {

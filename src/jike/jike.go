@@ -7,11 +7,12 @@ import (
 )
 
 func main() {
-	var mainUrl string
-	mainUrl = "https://time.geekbang.org/library?category=0"
+	//var mainUrl string
+	//mainUrl = "https://time.geekbang.org/library?category=0"
 	//mainUrl = "https://time.geekbang.org/library?category=1"
 	//启动一个浏览器
-	content := StartChromeAndGetContent(mainUrl)
+	var content string
+	//content = chrome.StartChromeAndGetContent(mainUrl)
 	log.Println(content)
 
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(content))

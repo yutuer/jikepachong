@@ -1,6 +1,7 @@
 package main
 
 import (
+	"chromeUtil"
 	"jike"
 	"log"
 )
@@ -17,8 +18,13 @@ func main() {
 	lessonsLen := len(allLessonIds)
 	log.Println("num:", lessonsLen, ", allIds:", allLessonIds)
 
-	ch := make(chan bool, lessonsLen)
+	service := chromeUtil.NewChromeService()
+	service.StartChromeService()
+	log.Println("chromeService服务启动完毕!")
 
+	defer service.Close()
+
+	ch := make(chan bool, lessonsLen)
 	for _, id := range allLessonIds {
 		func(id int) {
 			jike.GetOneLessonInfo(id)
@@ -29,4 +35,5 @@ func main() {
 	for i := 0; i < lessonsLen; i++ {
 		<-ch
 	}
+
 }
