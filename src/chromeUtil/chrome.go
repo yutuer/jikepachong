@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/tebeka/selenium"
+	"github.com/tebeka/selenium/chrome"
 	"log"
 	"os"
 	"time"
@@ -24,11 +25,10 @@ type Task struct {
 	url     string
 	logInfo string
 	infoId  int
-	driver  selenium.WebDriver
 }
 
-func NewTask(path string, url string, logInfo string, infoId int, driver selenium.WebDriver) *Task {
-	return &Task{path: path, url: url, logInfo: logInfo, infoId: infoId, driver: driver}
+func NewTask(path string, url string, logInfo string, infoId int) *Task {
+	return &Task{path: path, url: url, logInfo: logInfo, infoId: infoId}
 }
 
 var service *ChromeService
@@ -48,7 +48,7 @@ func (cs *ChromeService) StartChromeService() {
 	ch := make(chan bool)
 
 	go func() {
-		go cs.startChromeService(ch)
+		cs.startChromeService(ch)
 	}()
 
 	<-ch
@@ -75,6 +75,9 @@ func (cs *ChromeService) startChromeService(ch chan bool) {
 
 	ch <- true
 
+	webDriver := getWebDriver()
+	defer webDriver.Close()
+
 	for task := range cs.tasks {
 		executeTask(task)
 	}
@@ -91,10 +94,7 @@ func executeTask(task *Task) string {
 		log.Fatalln(fmt.Sprintf("Failed to load page: %s\n", err))
 	}
 
-	id := webDriver.SessionID()
-	log.Println("sessionId:", id)
-
-	////判断加载完成
+	//判断加载完成
 	jsRt, err := webDriver.ExecuteScript("return document.readyState", nil)
 	if err != nil {
 		log.Fatalln("exe js err", err)
@@ -111,6 +111,7 @@ func executeTask(task *Task) string {
 		log.Fatalln(err)
 	}
 
+	log.Println("开始写文件:", task.path)
 	WriteFile(frameHtml, task.path)
 
 	return frameHtml
@@ -162,4 +163,46 @@ func WriteFile(content string, path string) {
 	defer f.Close()
 
 	f.Write([]byte(content))
+}
+
+func getWebDriver() selenium.WebDriver {
+	// 调起chrome浏览器
+	webDriver, err := selenium.NewRemote(getChromeCaps(), fmt.Sprintf("http://localhost:%d/wd/hub", Port))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return webDriver
+}
+
+func getChromeCaps() selenium.Capabilities {
+	//链接本地的浏览器 chrome
+	caps := selenium.Capabilities{
+		"browserName": "chrome",
+	}
+
+	// 禁止加载图片，加快渲染速度
+	imgCaps := map[string]interface{}{
+		"profile.managed_default_content_settings.images": 2,
+	}
+
+	chromeCaps := chrome.Capabilities{
+		Prefs: imgCaps,
+		Path:  "",
+		Args: []string{
+			"--headless", // 设置Chrome无头模式，在linux下运行，需要设置这个参数，否则会报错
+			"--no-sandbox",
+			"--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/604.4.7 (KHTML, like Gecko) Version/11.0.2 Safari/604.4.7", // 模拟user-agent，防反爬
+			"--start-maximized",
+			"--disable-gpu",
+			"--disable-impl-side-painting",
+			"--disable-gpu-sandbox",
+			"--disable-accelerated-2d-canvas",
+			"--disable-accelerated-jpeg-decoding",
+			"--test-type=ui",
+		},
+	}
+	//以上是设置浏览器参数
+	caps.AddChrome(chromeCaps)
+
+	return caps
 }

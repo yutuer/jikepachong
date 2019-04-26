@@ -75,6 +75,7 @@ func GetOneLessonInfo(id int) {
 			infoRes := &InfoRes{}
 			json.Unmarshal(bs, infoRes)
 
+			//  创建info的目录夹
 			dirPath := fmt.Sprintf(OutDir, id, infoRes.Data.Author_name, infoRes.Data.Column_title)
 
 			if exists := isDirExist(dirPath); !exists {

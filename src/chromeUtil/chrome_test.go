@@ -60,6 +60,9 @@ func TestChrome(t *testing.T) {
 	if err != nil {
 		t.Fatal("connect to the webDriver faild", err.Error())
 	}
+
+	log.Println(w_b1)
+
 	//关闭一个webDriver会对应关闭一个chrome窗口
 	//但是不会导致seleniumServer关闭
 	defer w_b1.Quit()

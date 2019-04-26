@@ -26,7 +26,7 @@ func main() {
 
 	ch := make(chan bool, lessonsLen)
 	for _, id := range allLessonIds {
-		func(id int) {
+		go func(id int) {
 			jike.GetOneLessonInfo(id)
 			ch <- true
 		}(id)
