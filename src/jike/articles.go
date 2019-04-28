@@ -5,11 +5,13 @@ import (
 	"chromeUtil"
 	"encoding/json"
 	"fmt"
+	"github.com/tebeka/selenium"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 	"util"
 )
 
@@ -51,10 +53,10 @@ type ArticlePage struct {
 	More  bool `json:"more"`
 }
 
-func GetArticles(dirPath string, id int) error {
+func GetArticles(dirPath string, infoId int) error {
 	articleUrl := "https://time.geekbang.org/serv/v1/column/articles"
 
-	req := &ArticleReq{Cid: strconv.Itoa(id), Order: "earliest", Prev: 0, Sample: false, Size: 500}
+	req := &ArticleReq{Cid: strconv.Itoa(infoId), Order: "earliest", Prev: 0, Sample: false, Size: 500}
 
 	bs, e := json.Marshal(req)
 	if e != nil {
@@ -67,7 +69,7 @@ func GetArticles(dirPath string, id int) error {
 	}
 
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Referer", fmt.Sprintf("https://time.geekbang.org/column/intro/%d", id))
+	request.Header.Set("Referer", fmt.Sprintf("https://time.geekbang.org/column/intro/%d", infoId))
 
 	client := &http.Client{}
 	resp, err := client.Do(request)
@@ -87,7 +89,7 @@ func GetArticles(dirPath string, id int) error {
 			articleRes := &ArticleRes{}
 			json.Unmarshal(bs, articleRes)
 
-			doArticles(articleRes, dirPath, id)
+			doArticles(articleRes, dirPath, infoId)
 		} else {
 			log.Println(resp.StatusCode)
 		}
@@ -96,36 +98,90 @@ func GetArticles(dirPath string, id int) error {
 	return nil
 }
 
-func doArticles(articleRes *ArticleRes, dirPath string, id int) {
+func doArticles(articleRes *ArticleRes, dirPath string, infoId int) {
 	length := len(articleRes.Data.List)
 
-	queue := util.NewSeqWaitModel(length)
+	driver := chromeUtil.GetWebDriver()
+	defer driver.Close()
+
+	queue := util.NewNoSeqWaitModel(length)
 	defer queue.Close()
 
-	for _, v := range articleRes.Data.List {
-		DoOneArticle_SendToQueue(dirPath, v, id)
+	for _, article := range articleRes.Data.List {
+		//DoOneArticle_SendToQueue(dirPath, v, id)
+		url := fmt.Sprintf(ArticleUrl, article.Id)
+		title := strings.Replace(article.Article_title, "/", "&", -1)
+		title = strings.Replace(title, " ", "", -1)
+		title = strings.Replace(title, "|", "__", -1)
+		path := fmt.Sprintf(FileName, dirPath, title)
+
+		task := newTask(path, url, article.String(), infoId, driver)
+		queue.AddTask(task)
 	}
 
 	queue.Wait()
 }
 
 func DoOneArticle_SendToQueue(dirPath string, article Article, infoId int) {
-	url := fmt.Sprintf(ArticleUrl, article.Id)
-	title := strings.Replace(article.Article_title, "/", "&", -1)
-	//title = strings.Replace(title, "27 | ", "27__", -1)
-	title = strings.Replace(title, " ", "", -1)
-	//title = strings.Replace(title, "？", "!", -1)
-	//title = strings.Replace(title, "“", "", -1)
-	//title = strings.Replace(title, "”", "", -1)
-	//title = strings.Replace(title, "*", "_", -1)
-	//title = strings.Replace(title, "?", "!", -1)
-	//title = strings.Replace(title, "：", "_", -1)
-	//title = strings.Replace(title, "-", "_", -1)
-	title = strings.Replace(title, "|", "__", -1)
+	//url := fmt.Sprintf(ArticleUrl, article.Id)
+	//title := strings.Replace(article.Article_title, "/", "&", -1)
+	////title = strings.Replace(title, "27 | ", "27__", -1)
+	//title = strings.Replace(title, " ", "", -1)
+	////title = strings.Replace(title, "？", "!", -1)
+	////title = strings.Replace(title, "“", "", -1)
+	////title = strings.Replace(title, "”", "", -1)
+	////title = strings.Replace(title, "*", "_", -1)
+	////title = strings.Replace(title, "?", "!", -1)
+	////title = strings.Replace(title, "：", "_", -1)
+	////title = strings.Replace(title, "-", "_", -1)
+	//title = strings.Replace(title, "|", "__", -1)
+	//
+	//path := fmt.Sprintf(FileName, dirPath, title)
+	//newTask(path, url, article.String(), infoId)
+}
 
-	path := fmt.Sprintf(FileName, dirPath, title)
+func newTask(path string, url string, logInfo string, infoId int, driver selenium.WebDriver) util.ITask {
+	return &ArticleTask{path: path, url: url, logInfo: logInfo, infoId: infoId, webDriver: driver}
+}
 
-	task := chromeUtil.NewTask(path, url, article.String(), infoId)
+type ArticleTask struct {
+	path      string
+	url       string
+	logInfo   string
+	infoId    int
+	webDriver selenium.WebDriver
+}
 
-	chromeUtil.GetChromeService().SubmitTask(task)
+// 启动一个新进程打开url,  返回内容
+func (task *ArticleTask) DoTask() (error) {
+	webDriver := task.webDriver
+
+	log.Printf("开始抓取 %d: %s, %s", task.infoId, task.url, task.logInfo)
+	// 导航到目标网站
+	err := webDriver.Get(task.url)
+	if err != nil {
+		log.Fatalln(fmt.Sprintf("Failed to load page: %s\n", err))
+	}
+
+	//判断加载完成
+	jsRt, err := webDriver.ExecuteScript("return document.readyState", nil)
+	if err != nil {
+		log.Fatalln("exe js err", err)
+	}
+	if jsRt != "complete" {
+		log.Fatalln("网页加载未完成")
+	}
+
+	time.Sleep(1 * time.Second)
+
+	//获取网站内容
+	frameHtml, err := webDriver.PageSource()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	log.Println("开始写文件:", task.path)
+	util.WriteFile(frameHtml, task.path)
+
+	return nil
 }
