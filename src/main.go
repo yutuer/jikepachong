@@ -29,12 +29,8 @@ func main() {
 	defer queue.Close()
 
 	for _, id := range allLessonIds {
-		go func(id int) {
-			infoTask := jike.NewInfoTask(id, queue.GetChan())
-			queue.AddTask(infoTask)
-			//jike.GetOneLessonInfo(id)
-			//ch <- true
-		}(id)
+		infoTask := jike.NewInfoTask(id)
+		queue.AddTask(infoTask)
 	}
 
 	queue.Wait()

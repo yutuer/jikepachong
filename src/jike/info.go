@@ -38,27 +38,19 @@ type InfoData struct {
 	//Column_unit        string `json:"column_unit"`
 }
 
-func NewInfoTask(id int, ch chan bool) util.ITask {
-
-	return &infoTask{id, ch}
+func NewInfoTask(id int) util.ITask {
+	return &infoTask{id}
 }
 
 type infoTask struct {
 	id int
-	ch chan bool
 }
 
-func (it *infoTask) DoTask() {
-	GetOneLessonInfo(it.id)
-
-	it.ch <- true
+func (it *infoTask) DoTask() error {
+	return GetOneLessonInfo(it.id)
 }
 
-func (it *infoTask) CallBack() (func()) {
-	return nil
-}
-
-func GetOneLessonInfo(id int) {
+func GetOneLessonInfo(id int) error {
 	infoUrl := "https://time.geekbang.org/serv/v1/column/intro"
 
 	info := &InfoReq{Cid: strconv.Itoa(id), With_groupbuy: true}
@@ -106,12 +98,13 @@ func GetOneLessonInfo(id int) {
 				}
 			}
 
-			GetArticles(dirPath, id)
+			return GetArticles(dirPath, id)
 		} else {
 			log.Println(resp.StatusCode)
 		}
 
 	}
+	return nil
 }
 
 func isDirExist(dirPath string) bool {

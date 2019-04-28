@@ -9,8 +9,14 @@ type ITaskQueue interface {
 	Close()
 }
 
-func newAsyncTaskQueue(chanCap int) ITaskQueue {
+func newAsyncSeqTaskQueue(chanCap int) ITaskQueue {
 	queue := &asyncTaskQueue{ch: make(chan ITask, chanCap)}
+	queue.StartRun()
+	return queue
+}
+
+func newAsyncNoSeqTaskQueue(chanCap int) ITaskQueue {
+	queue := &asyncNoSeqTaskQueue{&asyncTaskQueue{ch: make(chan ITask, chanCap)}}
 	queue.StartRun()
 	return queue
 }
@@ -23,10 +29,6 @@ func (tq *asyncTaskQueue) AddTask(t ITask) {
 	tq.ch <- t
 }
 
-func (tq *asyncTaskQueue) Close() {
-	close(tq.ch)
-}
-
 func (tq *asyncTaskQueue) StartRun() {
 	go func() {
 		for {
@@ -35,7 +37,28 @@ func (tq *asyncTaskQueue) StartRun() {
 				break
 			}
 
-			_ = task.DoTask()
+			task.DoTask()
+		}
+	}()
+}
+
+func (tq *asyncTaskQueue) Close() {
+	close(tq.ch)
+}
+
+type asyncNoSeqTaskQueue struct {
+	*asyncTaskQueue
+}
+
+func (tq *asyncNoSeqTaskQueue) StartRun() {
+	go func() {
+		for {
+			task, ok := <-tq.ch
+			if !ok {
+				break
+			}
+
+			go task.DoTask()
 		}
 	}()
 }

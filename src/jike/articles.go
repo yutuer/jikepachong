@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"util"
 )
 
 const (
@@ -50,7 +51,7 @@ type ArticlePage struct {
 	More  bool `json:"more"`
 }
 
-func GetArticles(dirPath string, id int) {
+func GetArticles(dirPath string, id int) error {
 	articleUrl := "https://time.geekbang.org/serv/v1/column/articles"
 
 	req := &ArticleReq{Cid: strconv.Itoa(id), Order: "earliest", Prev: 0, Sample: false, Size: 500}
@@ -91,24 +92,21 @@ func GetArticles(dirPath string, id int) {
 			log.Println(resp.StatusCode)
 		}
 	}
+
+	return nil
 }
 
 func doArticles(articleRes *ArticleRes, dirPath string, id int) {
 	length := len(articleRes.Data.List)
 
-	ch := make(chan bool, length)
-
+	queue := util.NewSeqWaitModel(length)
+	defer queue.Close()
 
 	for _, v := range articleRes.Data.List {
-		func(article Article) {
-			DoOneArticle_SendToQueue(dirPath, article, id)
-			ch <- true
-		}(v)
+		DoOneArticle_SendToQueue(dirPath, v, id)
 	}
 
-	for i := 0; i < length; i++ {
-		<-ch
-	}
+	queue.Wait()
 }
 
 func DoOneArticle_SendToQueue(dirPath string, article Article, infoId int) {

@@ -15,8 +15,14 @@ type IAsyncWaitModel interface {
 	Wait()
 }
 
+// 顺序不等待
 func NewSeqNoWaitModel(chanCap int) IAsyncNoWaitModel {
-	return &seqNoWaitModel{newAsyncTaskQueue(chanCap)}
+	return &seqNoWaitModel{newAsyncSeqTaskQueue(chanCap)}
+}
+
+// 无顺序不等待
+func NewNoSeqNoWaitModel(chanCap int) IAsyncNoWaitModel {
+	return &seqNoWaitModel{newAsyncNoSeqTaskQueue(chanCap)}
 }
 
 func (sm *seqNoWaitModel) AddTask(t ITask) {
@@ -32,8 +38,14 @@ type seqNoWaitModel struct {
 	ITaskQueue
 }
 
+// 顺序等待
 func NewSeqWaitModel(chanCap int) IAsyncWaitModel {
-	return &seqWaitModel{newAsyncTaskQueue(chanCap), make(chan bool, chanCap), chanCap}
+	return &seqWaitModel{newAsyncSeqTaskQueue(chanCap), make(chan bool, chanCap), chanCap}
+}
+
+// 无顺序等待
+func NewNoSeqWaitModel(chanCap int) IAsyncWaitModel {
+	return &seqWaitModel{newAsyncNoSeqTaskQueue(chanCap), make(chan bool, chanCap), chanCap}
 }
 
 func newWaitTask(t ITask, ch chan bool) ITask {
