@@ -7,7 +7,7 @@ import (
 	"regexp"
 )
 
-func WriteFile(content string, path string) {
+func createFile(path string) (*os.File, error) {
 	var f *os.File
 
 	_, err := os.Stat(path)
@@ -29,16 +29,31 @@ func WriteFile(content string, path string) {
 			}
 		}
 	}
+	return f, err
+}
 
+func WriteFile(content string, path string) {
+	f, err := createFile(path)
 	if f == nil {
 		log.Println(errors.Errorf("%s 不能生成文件", path))
 		log.Println(err.Error())
 		return
 	}
-
 	defer f.Close()
 
 	f.Write([]byte(content))
+}
+
+func WriteFile_B(bs []byte, path string) {
+	f, err := createFile(path)
+	if f == nil {
+		log.Println(errors.Errorf("%s 不能生成文件", path))
+		log.Println(err.Error())
+		return
+	}
+	defer f.Close()
+
+	f.Write(bs)
 }
 
 var re = regexp.MustCompile("[/:?|]")

@@ -7,6 +7,7 @@ import (
 	"log"
 	"testing"
 	"time"
+	"util"
 )
 
 func TestChrome(t *testing.T) {
@@ -96,7 +97,6 @@ func TestChrome(t *testing.T) {
 
 	//判断加载完成
 
-
 	jsRt, err := w_b1.ExecuteScript("return document.readyState", nil)
 	if err != nil {
 		log.Fatalln("exe js err", err)
@@ -105,12 +105,30 @@ func TestChrome(t *testing.T) {
 		log.Fatalln("网页加载未完成")
 	}
 
-	frameHtml, err := w_b1.PageSource()
+	data, err := w_b1.FindElement(selenium.ByID, "app")
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	log.Println(frameHtml)
+	s, err := data.Text()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	println(s)
+
+	bs, err := data.Screenshot(true)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	util.WriteFile_B(bs, "d:/111.png")
+
+	//frameHtml, err := w_b1.PageSource()
+	//if err != nil {
+	//	log.Fatalln(err)
+	//}
+	//
+	//log.Println(frameHtml)
 
 	log.Println("开始休眠2S...")
 

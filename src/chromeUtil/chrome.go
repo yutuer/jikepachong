@@ -44,7 +44,6 @@ func (cs *ChromeService) Close() {
 	if cs == nil {
 		return
 	}
-
 	err := cs.service.Stop()
 	if err != nil {
 		log.Fatalln(err)
