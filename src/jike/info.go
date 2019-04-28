@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"util"
 )
 
 const (
@@ -35,6 +36,26 @@ type InfoData struct {
 	//Column_subtitle    string `json:"column_subtitle"`
 	Column_title string `json:"column_title"`
 	//Column_unit        string `json:"column_unit"`
+}
+
+func NewInfoTask(id int, ch chan bool) util.ITask {
+
+	return &infoTask{id, ch}
+}
+
+type infoTask struct {
+	id int
+	ch chan bool
+}
+
+func (it *infoTask) DoTask() {
+	GetOneLessonInfo(it.id)
+
+	it.ch <- true
+}
+
+func (it *infoTask) CallBack() (func()) {
+	return nil
 }
 
 func GetOneLessonInfo(id int) {

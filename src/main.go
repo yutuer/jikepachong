@@ -4,6 +4,7 @@ import (
 	"chromeUtil"
 	"jike"
 	"log"
+	"util"
 )
 
 func init() {
@@ -24,16 +25,17 @@ func main() {
 
 	defer service.Close()
 
-	ch := make(chan bool, lessonsLen)
+	queue := util.NewSeqWaitModel(lessonsLen)
+	defer queue.Close()
+
 	for _, id := range allLessonIds {
 		go func(id int) {
-			jike.GetOneLessonInfo(id)
-			ch <- true
+			infoTask := jike.NewInfoTask(id, queue.GetChan())
+			queue.AddTask(infoTask)
+			//jike.GetOneLessonInfo(id)
+			//ch <- true
 		}(id)
 	}
 
-	for i := 0; i < lessonsLen; i++ {
-		<-ch
-	}
-
+	queue.Wait()
 }

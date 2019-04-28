@@ -98,6 +98,7 @@ func doArticles(articleRes *ArticleRes, dirPath string, id int) {
 
 	ch := make(chan bool, length)
 
+
 	for _, v := range articleRes.Data.List {
 		func(article Article) {
 			DoOneArticle_SendToQueue(dirPath, article, id)
