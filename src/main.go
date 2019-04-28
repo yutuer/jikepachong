@@ -25,7 +25,7 @@ func main() {
 
 	defer service.Close()
 
-	queue := util.NewSeqWaitModel(lessonsLen)
+	queue := util.NewNoSeqWaitModel(lessonsLen)
 	defer queue.Close()
 
 	for _, id := range allLessonIds {

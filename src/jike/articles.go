@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 	"util"
 )
@@ -104,15 +103,12 @@ func doArticles(articleRes *ArticleRes, dirPath string, infoId int) {
 	driver := chromeUtil.GetWebDriver()
 	defer driver.Close()
 
-	queue := util.NewNoSeqWaitModel(length)
+	queue := util.NewSeqWaitModel(length)
 	defer queue.Close()
 
 	for _, article := range articleRes.Data.List {
-		//DoOneArticle_SendToQueue(dirPath, v, id)
 		url := fmt.Sprintf(ArticleUrl, article.Id)
-		title := strings.Replace(article.Article_title, "/", "&", -1)
-		title = strings.Replace(title, " ", "", -1)
-		title = strings.Replace(title, "|", "__", -1)
+		title := util.FilterFileName(article.Article_title)
 		path := fmt.Sprintf(FileName, dirPath, title)
 
 		task := newTask(path, url, article.String(), infoId, driver)
@@ -177,7 +173,8 @@ func (task *ArticleTask) DoTask() (error) {
 	//获取网站内容
 	frameHtml, err := webDriver.PageSource()
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		return err
 	}
 
 	log.Println("开始写文件:", task.path)

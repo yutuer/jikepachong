@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"log"
 	"os"
+	"regexp"
 )
 
 func WriteFile(content string, path string) {
@@ -30,9 +31,20 @@ func WriteFile(content string, path string) {
 	}
 
 	if f == nil {
-		log.Fatalln(errors.Errorf("title:%s 不能生成文件", path))
+		log.Println(errors.Errorf("%s 不能生成文件", path))
+		log.Println(err.Error())
+		return
 	}
+
 	defer f.Close()
 
 	f.Write([]byte(content))
+}
+
+var re = regexp.MustCompile("[/:?|]")
+
+func FilterFileName(oldName string) string {
+	title := oldName
+	s := re.ReplaceAllString(title, "_")
+	return s
 }
