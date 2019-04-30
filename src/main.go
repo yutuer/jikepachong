@@ -19,7 +19,7 @@ func main() {
 	lessonsLen := len(allLessonIds)
 	log.Println("num:", lessonsLen, ", allIds:", allLessonIds)
 
-	service := chromeUtil.NewChromeService()
+	service := chromeExample.NewChromeService()
 	service.StartChromeService()
 	log.Println("chromeService服务启动完毕!")
 

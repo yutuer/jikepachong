@@ -1,4 +1,4 @@
-package chromeUtil
+package chromeExample
 
 import (
 	"fmt"

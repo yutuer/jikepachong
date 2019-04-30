@@ -1,4 +1,4 @@
-package chromeUtil
+package chromeExample
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 	"log"
 	"testing"
 	"time"
-	"util"
 )
 
 func TestChrome(t *testing.T) {
@@ -68,7 +67,7 @@ func TestChrome(t *testing.T) {
 	//但是不会导致seleniumServer关闭
 	defer w_b1.Quit()
 
-	err = w_b1.Get("https://time.geekbang.org/column/article/49")
+	err = w_b1.Get("https://time.geekbang.org/column/article/333")
 	if err != nil {
 		t.Fatal("get page faild", err.Error())
 	}
@@ -105,6 +104,11 @@ func TestChrome(t *testing.T) {
 		log.Fatalln("网页加载未完成")
 	}
 
+	log.Println("开始休眠2S...")
+
+	time.Sleep(1 * time.Second)
+
+	//data, err := w_b1.FindElement(selenium.ByXPATH, "//*[@id=\"app\"]/div[1]/div[2]/div[2]")
 	data, err := w_b1.FindElement(selenium.ByID, "app")
 	if err != nil {
 		log.Fatalln(err)
@@ -114,14 +118,14 @@ func TestChrome(t *testing.T) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	println(s)
+	log.Println(s)
 
-	bs, err := data.Screenshot(true)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	util.WriteFile_B(bs, "d:/111.png")
+	//bs, err := data.Screenshot(true)
+	//if err != nil {
+	//	log.Fatalln(err)
+	//}
+	//
+	//util.WriteFile_B(bs, "d:/111.png")
 
 	//frameHtml, err := w_b1.PageSource()
 	//if err != nil {
@@ -130,8 +134,5 @@ func TestChrome(t *testing.T) {
 	//
 	//log.Println(frameHtml)
 
-	log.Println("开始休眠2S...")
-
-	time.Sleep(2 * time.Minute)
 	return
 }

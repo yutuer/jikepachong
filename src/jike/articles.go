@@ -100,7 +100,7 @@ func GetArticles(dirPath string, infoId int) error {
 func doArticles(articleRes *ArticleRes, dirPath string, infoId int) {
 	length := len(articleRes.Data.List)
 
-	driver := chromeUtil.GetWebDriver()
+	driver := chromeExample.GetWebDriver()
 	defer driver.Close()
 
 	queue := util.NewSeqWaitModel(length)
