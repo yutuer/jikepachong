@@ -1,9 +1,11 @@
 package main
 
 import (
+	"chromeExample"
 	"chromeUtil"
 	"jike"
 	"log"
+	"runtime"
 	"util"
 )
 
@@ -34,4 +36,6 @@ func main() {
 	}
 
 	queue.Wait()
+
+	runtime.LockOSThread()
 }
